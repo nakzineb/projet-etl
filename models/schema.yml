@@ -2,12 +2,92 @@ version: 2
 
 sources:
   - name: raw
+    description: "Données brutes importées depuis Airbyte"
     database: modular-conduit-476508-h5
     schema: tp_airbyte_csv
     tables:
       - name: sales
-        description: "Table brute des ventes"
+        description: "Table brute des ventes - contient toutes les transactions de vente"
+        columns:
+          - name: date_date
+            description: "Date de la vente"
+          - name: orders_id
+            description: "Identifiant unique de la commande - clé étrangère vers ship"
+          - name: pdt_id
+            description: "Identifiant du produit - clé étrangère vers products"
+          - name: revenue
+            description: "Revenu généré par la vente"
+          - name: quantity
+            description: "Quantité de produits vendus"
+
       - name: products
-        description: "Table brute des produits"
+        description: "Table brute des produits - catalogue des produits disponibles"
+        columns:
+          - name: pdt_id
+            description: "Identifiant unique du produit - clé primaire"
+          - name: product_name
+            description: "Nom du produit"
+          - name: purchase_price
+            description: "Prix d'achat du produit"
+
       - name: ship
-        description: "Table brute des expéditions"
+        description: "Table brute des expéditions - informations sur les frais de livraison"
+        columns:
+          - name: orders_id
+            description: "Identifiant de la commande - clé étrangère vers sales"
+          - name: shipping_fee
+            description: "Frais de livraison (première colonne)"
+          - name: shipping_fee_1
+            description: "Frais de livraison (colonne alternative)"
+          - name: logcost
+            description: "Coût logistique de l'expédition"
+          - name: ship_cost
+            description: "Coût total d'expédition (format texte avec symbole €)"
+
+models:
+  - name: stg_raw__sales
+    description: "Modèle staging des ventes - données nettoyées et standardisées"
+    columns:
+      - name: date_date
+        description: "Date de la vente"
+      - name: orders_id
+        description: "Identifiant unique de la commande"
+        tests:
+          - not null 
+      - name: pdt_id
+        description: "Identifiant du produit"
+      - name: revenue
+        description: "Revenu généré par la vente"
+      - name: quantity
+        description: "Quantité de produits vendus"
+    tests:
+      - unique:
+              column_name: "(orders_id || '-' || pdt_id)"
+
+  - name: stg_raw__products
+    description: "Modèle staging des produits - catalogue nettoyé"
+    columns:
+      - name: pdt_id
+        description: "Identifiant unique du produit"
+        tests:
+          - unique
+          - not_null
+      - name: product_name
+        description: "Nom du produit"
+      - name: purchase_price
+        description: "Prix d'achat du produit"
+
+  - name: stg_raw__ship
+    description: "Modèle staging des expéditions - frais de livraison consolidés et nettoyés"
+    columns:
+      - name: orders_id
+        description: "Identifiant de la commande - clé étrangère vers sales"
+        tests:
+          - not_null
+          - unique
+      - name: shipping_fee
+        description: "Frais de livraison consolidés (coalesce de shipping_fee et shipping_fee_1)"
+      - name: logcost
+        description: "Coût logistique de l'expédition"
+      - name: ship_cost
+        description: "Coût total d'expédition converti en FLOAT64 (symbole € et virgules supprimés)"

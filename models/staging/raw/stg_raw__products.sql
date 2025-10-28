@@ -13,6 +13,7 @@ renamed as (
         cast(purchse_price as float64)   as purchase_price,
 
     from source
+    where products_id is not null
 
 )
 
