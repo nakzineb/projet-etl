@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    database: modular-conduit-476508-h5
+    schema: tp_airbyte_csv
+    tables:
+      - name: sales
+        description: "Table brute des ventes"
+      - name: products
+        description: "Table brute des produits"
+      - name: ship
+        description: "Table brute des expéditions"
